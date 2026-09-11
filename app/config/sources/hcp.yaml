@@ -1,0 +1,31 @@
+id: hcp
+
+name: Haut-Commissariat au Plan
+
+enabled: true
+
+connector: HCPConnector
+
+base_url: https://www.hcp.ma
+
+update_frequency: 15
+
+allowed_formats:
+  - pdf
+  - xlsx
+  - csv
+  - html
+
+sectors:
+
+  - agriculture
+
+  - industrie
+
+  - commerce
+
+  - tourisme
+
+  - population
+
+  - emploi

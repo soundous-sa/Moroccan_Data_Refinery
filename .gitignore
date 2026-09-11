@@ -1,0 +1,11 @@
+@"
+.venv/
+__pycache__/
+*.pyc
+.env
+.vscode/
+data/lake/raw/
+data/lake/temp/
+data/lake/failed/
+*.log
+"@ | Out-File -Encoding utf8 .gitignore
