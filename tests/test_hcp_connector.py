@@ -13,7 +13,7 @@ print("URL             :", connector.get_base_url())
 print("Formats         :", connector.get_allowed_formats())
 print("Fréquence       :", connector.get_update_frequency())
 print("Activé          :", connector.is_enabled())
-print("Secteurs        :", connector.get_sectors())
+print("Catégories      :", connector.get_categories())
 
 print()
 print("Métadonnées :")
