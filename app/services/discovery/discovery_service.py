@@ -6,6 +6,9 @@ from app.reports.report_builder import ReportBuilder
 
 from app.services.crawler.http_client import HTTPClient
 
+from app.services.discovery.category_discovery_crawler import (
+    CategoryDiscoveryCrawler
+)
 from app.services.discovery.discovery_context import DiscoveryContext
 from app.services.discovery.discovery_logger import DiscoveryLogger
 from app.services.discovery.discovery_result import DiscoveryResult
@@ -28,6 +31,8 @@ class DiscoveryService:
         self.http = HTTPClient()
 
         self.detector = PublicationDetector()
+
+        self.category_crawler = CategoryDiscoveryCrawler()
 
         self.logger = DiscoveryLogger()
 
@@ -69,28 +74,23 @@ class DiscoveryService:
         )
 
         # --------------------------------------------------
-        # Téléchargement de la page source
+        # Navigation : catégories + pagination si le connecteur les
+        # expose, sinon repli sur l'ancienne détection page unique.
         # --------------------------------------------------
 
-        response = self.http.get(
+        categories = getattr(connector, "get_categories", None)
 
-            context.base_url
+        if categories and connector.get_categories():
 
-        )
+            collection, pages_visited, links_found, format_counts = (
+                self._discover_by_categories(connector)
+            )
 
-        html = response.text
+        else:
 
-        # --------------------------------------------------
-        # Détection des publications
-        # --------------------------------------------------
-
-        collection = self.detector.detect(
-
-            html,
-
-            connector.get_id()
-
-        )
+            collection, pages_visited, links_found, format_counts = (
+                self._discover_single_page(connector, context)
+            )
 
         # ==================================================
         # PERSISTENCE PostgreSQL
@@ -125,61 +125,29 @@ class DiscoveryService:
 
         print("=" * 60)
 
-        # --------------------------------------------------
-        # Récupération des liens
-        # --------------------------------------------------
-
-        links = self.detector.parser.find_all(
-
-            html,
-
-            "a"
-
-        )
-
         # ==================================================
         # STATISTIQUES
         # ==================================================
 
         statistics = DiscoveryStatistics(
 
-            pages_visited=1,
+            pages_visited=pages_visited,
 
-            links_found=len(links),
+            links_found=links_found,
 
             publications_found=len(collection),
 
-            duplicates_removed=persistence_result["duplicates"]
+            duplicates_removed=persistence_result["duplicates"],
+
+            pdf_count=format_counts.get("pdf_count", 0),
+
+            excel_count=format_counts.get("excel_count", 0),
+
+            csv_count=format_counts.get("csv_count", 0),
+
+            html_count=format_counts.get("html_count", 0)
 
         )
-
-        # --------------------------------------------------
-        # Statistiques par type de fichier
-        # --------------------------------------------------
-
-        for publication in collection:
-
-            if publication.metadata is None:
-
-                continue
-
-            file_type = publication.metadata.file_type
-
-            if file_type == "PDF":
-
-                statistics.pdf_count += 1
-
-            elif file_type == "EXCEL":
-
-                statistics.excel_count += 1
-
-            elif file_type == "CSV":
-
-                statistics.csv_count += 1
-
-            elif file_type == "HTML":
-
-                statistics.html_count += 1
 
         # ==================================================
         # RAPPORT
@@ -228,3 +196,85 @@ class DiscoveryService:
             report=report
 
         )
+
+    # ==================================================
+    # NAVIGATION PAR CATEGORIES + PAGINATION
+    # ==================================================
+
+    def _discover_by_categories(self, connector):
+
+        result = self.category_crawler.crawl(connector)
+
+        return (
+            result.publications,
+            result.pages_visited,
+            result.links_found,
+            result.format_counts
+        )
+
+    # ==================================================
+    # ANCIEN COMPORTEMENT : UNE SEULE PAGE
+    # (connecteurs qui n'exposent pas encore de catégories)
+    # ==================================================
+
+    def _discover_single_page(self, connector, context):
+
+        response = self.http.get(
+
+            context.base_url
+
+        )
+
+        html = response.text
+
+        collection = self.detector.detect(
+
+            html,
+
+            connector.get_id()
+
+        )
+
+        links = self.detector.parser.find_all(
+
+            html,
+
+            "a"
+
+        )
+
+        format_counts = {}
+
+        for publication in collection:
+
+            if publication.metadata is None:
+
+                continue
+
+            file_type = publication.metadata.file_type
+
+            if file_type == "PDF":
+
+                format_counts["pdf_count"] = (
+                    format_counts.get("pdf_count", 0) + 1
+                )
+
+            elif file_type == "EXCEL":
+
+                format_counts["excel_count"] = (
+                    format_counts.get("excel_count", 0) + 1
+                )
+
+            elif file_type == "CSV":
+
+                format_counts["csv_count"] = (
+                    format_counts.get("csv_count", 0) + 1
+                )
+
+            elif file_type == "HTML":
+
+                format_counts["html_count"] = (
+                    format_counts.get("html_count", 0) + 1
+                )
+
+        return collection, 1, len(links), format_counts

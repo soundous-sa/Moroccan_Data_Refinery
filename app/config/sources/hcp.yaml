@@ -13,19 +13,30 @@ update_frequency: 15
 allowed_formats:
   - pdf
   - xlsx
+  - xls
   - csv
   - html
 
-sectors:
+# Catégories réelles du site (paramètre "tag" de /downloads/?tag=...),
+# vérifiées manuellement sur hcp.ma. Pour ajouter une catégorie, il suffit
+# d'ajouter ici le nom exact du tag tel qu'il apparaît sur le site.
+#
+# NB : ces valeurs sont actuellement dupliquées "en dur" dans
+# HCPConnector.CATEGORIES (le chargement des connecteurs ne lit pas encore
+# ce fichier YAML au runtime — cf. RegistryLoader). Ce fichier documente la
+# configuration attendue.
+categories:
+  - Emploi
+  - Population et démographie
+  - Comptes nationaux
+  - Indices des prix et production
+  - Conjoncture entreprise
+  - Revenu et conditions de vie
+  - Développement durable
 
-  - agriculture
-
-  - industrie
-
-  - commerce
-
-  - tourisme
-
-  - population
-
-  - emploi
+discovery:
+  listing_path: /downloads/
+  pagination_param: p
+  page_size: 20
+  next_symbol: "»"
+  max_pages_per_category: 30

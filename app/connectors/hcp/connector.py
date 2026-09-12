@@ -3,6 +3,21 @@ from app.connectors.base.base_connector import BaseConnector
 
 class HCPConnector(BaseConnector):
 
+    # Catégories réelles du site (paramètre "tag" de /downloads/?tag=...),
+    # vérifiées manuellement sur hcp.ma. Contrairement aux anciennes
+    # valeurs (agriculture, industrie, commerce, tourisme), qui ne
+    # correspondent à aucun tag existant sur le site (0 résultat), celles-ci
+    # renvoient des publications réelles.
+    CATEGORIES = [
+        "Emploi",
+        "Population et démographie",
+        "Comptes nationaux",
+        "Indices des prix et production",
+        "Conjoncture entreprise",
+        "Revenu et conditions de vie",
+        "Développement durable"
+    ]
+
     def get_id(self) -> str:
 
         return "hcp"
@@ -33,22 +48,15 @@ class HCPConnector(BaseConnector):
 
         return True
 
-    def get_sectors(self) -> list[str]:
+    def get_categories(self) -> list[str]:
 
-        return [
-            "agriculture",
-            "industrie",
-            "commerce",
-            "tourisme",
-            "population",
-            "emploi"
-        ]
+        return list(self.CATEGORIES)
 
     def get_metadata(self) -> dict:
 
         metadata = super().get_metadata()
 
-        metadata["sectors"] = self.get_sectors()
+        metadata["categories"] = self.get_categories()
 
         metadata["enabled"] = self.is_enabled()
 
