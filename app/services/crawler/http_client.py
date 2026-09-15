@@ -1,9 +1,16 @@
+import time
+
 import requests
 
 from app.config.logger import logger
 
 
 class HTTPClient:
+
+    # Délai entre deux requêtes : évite de déclencher un blocage
+    # anti-bot (connexions coupées, DNS en échec) sur les sites qui
+    # limitent le débit des visiteurs automatisés.
+    REQUEST_DELAY = 0.3
 
     def __init__(self):
 
@@ -27,6 +34,8 @@ class HTTPClient:
     # ==================================================
 
     def get(self, url):
+
+        time.sleep(self.REQUEST_DELAY)
 
         logger.info(f"Connexion : {url}")
 
@@ -62,6 +71,8 @@ class HTTPClient:
     # ==================================================
 
     def get_headers(self, url):
+
+        time.sleep(self.REQUEST_DELAY)
 
         logger.info(f"Lecture des headers : {url}")
 

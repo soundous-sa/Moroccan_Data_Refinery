@@ -1,0 +1,29 @@
+id: bam
+
+name: Bank Al-Maghrib
+
+enabled: true
+
+connector: BAMConnector
+
+base_url: https://www.bkam.ma
+
+update_frequency: 7
+
+allowed_formats:
+  - pdf
+  - xlsx
+  - csv
+  - html
+
+sectors:
+
+  - politique-monetaire
+
+  - taux-de-change
+
+  - inflation
+
+  - statistiques-monetaires
+
+  - supervision-bancaire

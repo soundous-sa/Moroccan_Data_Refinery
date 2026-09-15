@@ -243,6 +243,45 @@ class PublicationRepository:
             )
 
     # ==========================================================
+    # Récupérer les publications d'une source par statut
+    # ==========================================================
+
+    def find_by_status(self, source_id, status):
+
+        query = text("""
+            SELECT
+                id,
+                title,
+                publication_date,
+                url,
+                source_id,
+                sector,
+                category,
+                status,
+                created_at,
+                updated_at
+            FROM publications
+            WHERE source_id = :source_id
+                AND status = :status
+            ORDER BY id
+        """)
+
+        with self.engine.connect() as connection:
+
+            result = connection.execute(
+                query,
+                {
+                    "source_id": source_id,
+                    "status": status
+                }
+            )
+
+            return [
+                dict(row._mapping)
+                for row in result.fetchall()
+            ]
+
+    # ==========================================================
     # Récupérer toutes les publications
     # ==========================================================
 

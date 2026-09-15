@@ -1,0 +1,31 @@
+id: opendata
+
+name: Portail National des Données Ouvertes
+
+enabled: true
+
+connector: OpenDataConnector
+
+base_url: https://data.gov.ma
+
+update_frequency: 15
+
+allowed_formats:
+  - csv
+  - json
+  - xlsx
+  - html
+
+sectors:
+
+  - agriculture
+
+  - sante
+
+  - education
+
+  - economie
+
+  - environnement
+
+  - administration

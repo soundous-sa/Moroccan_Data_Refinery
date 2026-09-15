@@ -4,13 +4,10 @@ from app.reports.discovery_report import DiscoveryReport
 from app.reports.discovery_statistics import DiscoveryStatistics
 from app.reports.report_builder import ReportBuilder
 
-from app.services.crawler.http_client import HTTPClient
-
 from app.services.discovery.discovery_context import DiscoveryContext
 from app.services.discovery.discovery_logger import DiscoveryLogger
 from app.services.discovery.discovery_result import DiscoveryResult
-from app.services.discovery.publication_detector import PublicationDetector
-from app.services.discovery.url_normalizer import URLNormalizer
+from app.services.discovery.site_crawler import SiteCrawler
 
 from app.services.persistence.publication_persistence_service import (
     PublicationPersistenceService
@@ -25,15 +22,11 @@ class DiscoveryService:
         # Services
         # ==================================================
 
-        self.http = HTTPClient()
-
-        self.detector = PublicationDetector()
+        self.crawler = SiteCrawler()
 
         self.logger = DiscoveryLogger()
 
         self.report_builder = ReportBuilder()
-
-        self.normalizer = URLNormalizer()
 
         # Service responsable de PostgreSQL
         self.persistence = PublicationPersistenceService()
@@ -42,7 +35,7 @@ class DiscoveryService:
     # DISCOVERY
     # ==================================================
 
-    def discover(self, connector):
+    def discover(self, connector, max_depth=2, max_pages=25):
 
         # --------------------------------------------------
         # Début de la découverte
@@ -69,26 +62,19 @@ class DiscoveryService:
         )
 
         # --------------------------------------------------
-        # Téléchargement de la page source
+        # Parcours du site (plusieurs pages, même domaine)
+        # et détection des publications
         # --------------------------------------------------
 
-        response = self.http.get(
+        collection, pages_visited, links_found = self.crawler.crawl(
 
-            context.base_url
+            context.base_url,
 
-        )
+            connector.get_id(),
 
-        html = response.text
+            max_depth=max_depth,
 
-        # --------------------------------------------------
-        # Détection des publications
-        # --------------------------------------------------
-
-        collection = self.detector.detect(
-
-            html,
-
-            connector.get_id()
+            max_pages=max_pages
 
         )
 
@@ -125,27 +111,15 @@ class DiscoveryService:
 
         print("=" * 60)
 
-        # --------------------------------------------------
-        # Récupération des liens
-        # --------------------------------------------------
-
-        links = self.detector.parser.find_all(
-
-            html,
-
-            "a"
-
-        )
-
         # ==================================================
         # STATISTIQUES
         # ==================================================
 
         statistics = DiscoveryStatistics(
 
-            pages_visited=1,
+            pages_visited=pages_visited,
 
-            links_found=len(links),
+            links_found=links_found,
 
             publications_found=len(collection),
 

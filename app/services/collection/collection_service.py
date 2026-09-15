@@ -168,6 +168,61 @@ class CollectionService:
             )
 
     # ==================================================
+    # RETENTER LES PUBLICATIONS EN ECHEC D'UNE SOURCE
+    # ==================================================
+
+    def retry_failed(self, source_id):
+
+        failed_publications = (
+            self.persistence.get_failed_publications(source_id)
+        )
+
+        return self._collect_many(
+            failed_publications,
+            f"Nouvelle tentative pour {{count}} "
+            f"publication(s) en échec ({source_id})."
+        )
+
+    # ==================================================
+    # COLLECTER LES PUBLICATIONS JAMAIS TRAITEES
+    # ==================================================
+    #
+    # Couvre les publications tout juste découvertes (ce run) ainsi
+    # que d'anciennes lignes restées bloquées en DISCOVERED (ex. un
+    # run interrompu avant la mise à jour de statut).
+
+    def collect_pending(self, source_id):
+
+        pending_publications = (
+            self.persistence.get_pending_publications(source_id)
+        )
+
+        return self._collect_many(
+            pending_publications,
+            f"Collecte de {{count}} "
+            f"publication(s) en attente ({source_id})."
+        )
+
+    # ==================================================
+    # COLLECTER UNE LISTE DE PUBLICATIONS
+    # ==================================================
+
+    def _collect_many(self, publications, log_message):
+
+        if not publications:
+
+            return []
+
+        logger.info(
+            log_message.format(count=len(publications))
+        )
+
+        return [
+            self.collect(publication)
+            for publication in publications
+        ]
+
+    # ==================================================
     # GERER UN ECHEC DE COLLECTE
     # ==================================================
 

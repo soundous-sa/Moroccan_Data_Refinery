@@ -6,6 +6,7 @@ from app.registry.registry_loader import RegistryLoader
 from app.loaders.source_loader import SourceLoader
 
 from app.services.discovery.discovery_service import DiscoveryService
+from app.services.collection.collection_service import CollectionService
 
 
 def main():
@@ -75,6 +76,7 @@ def main():
     # ==================================================
 
     discovery_service = DiscoveryService()
+    collection_service = CollectionService()
 
     # ==================================================
     # 6. Exécution des connecteurs
@@ -132,6 +134,69 @@ def main():
             )
 
             continue
+
+        # ==================================================
+        # Collection (publications en attente + retry des échecs)
+        # ==================================================
+        #
+        # collect_pending() couvre à la fois les publications tout
+        # juste découvertes ce run et d'anciennes lignes restées
+        # bloquées en DISCOVERED (ex. run précédent interrompu).
+
+        try:
+
+            pending_results = collection_service.collect_pending(
+                connector.get_id()
+            )
+
+        except Exception as e:
+
+            pending_results = []
+
+            logger.exception(
+                f"Erreur pendant la collecte : {e}"
+            )
+
+        try:
+
+            retry_results = collection_service.retry_failed(
+                connector.get_id()
+            )
+
+        except Exception as e:
+
+            retry_results = []
+
+            logger.exception(
+                f"Erreur pendant le retry des échecs : {e}"
+            )
+
+        all_results = pending_results + retry_results
+
+        if not all_results:
+
+            logger.info(
+                "Aucune publication à collecter."
+            )
+
+            print()
+
+            continue
+
+        collected = sum(
+            1
+            for collection_result in all_results
+            if collection_result.success
+        )
+
+        failed = len(all_results) - collected
+
+        logger.success(
+            f"Collecte terminée : {collected} réussie(s), "
+            f"{failed} échouée(s)."
+        )
+
+        print()
 
     # ==================================================
     # 7. Fin

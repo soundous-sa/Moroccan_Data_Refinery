@@ -1,0 +1,29 @@
+id: ministry
+
+name: Ministère de l'Économie et des Finances
+
+enabled: true
+
+connector: MinistryConnector
+
+base_url: https://www.finances.gov.ma
+
+update_frequency: 15
+
+allowed_formats:
+  - pdf
+  - xlsx
+  - csv
+  - html
+
+sectors:
+
+  - budget
+
+  - fiscalite
+
+  - dette-publique
+
+  - economie
+
+  - finances-publiques

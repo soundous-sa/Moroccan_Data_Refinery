@@ -25,7 +25,8 @@ class PublicationDetector:
     def detect(
         self,
         html: str,
-        source_id: str
+        source_id: str,
+        base_url: str = "https://www.hcp.ma"
     ) -> PublicationCollection:
 
         collection = PublicationCollection()
@@ -46,7 +47,7 @@ class PublicationDetector:
             # Normalisation de l'URL
             absolute_url = self.normalizer.normalize(
                 link.href,
-                "https://www.hcp.ma"
+                base_url
             )
 
             # Création de la publication
